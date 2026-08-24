@@ -1,0 +1,36 @@
+name: Sync Upstream
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Fetch upstream and patches
+        run: |
+          git remote add upstream https://github.com/Predidit/Kazumi.git
+          git fetch upstream main
+          git fetch origin patches
+
+      - name: Rebuild main from upstream + patches
+        run: |
+          git checkout -B sync upstream/main
+          git checkout origin/patches -- \
+            lib/services/sync/webdav.dart \
+            pubspec.yaml \
+            assets/cert/liangchen-CA.crt \
+            .github/workflows/build.yml \
+            .github/workflows/sync-upstream.yml
+          git commit -m "Sync upstream + re-apply custom patches" --allow-empty
+
+      - name: Push to main
+        run: git push --force origin sync:main
