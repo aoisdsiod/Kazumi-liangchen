@@ -23,6 +23,8 @@ jobs:
 
       - name: Rebuild main from upstream + patches
         run: |
+          git config user.name "liangchen"
+          git config user.email "liangchen@users.noreply.github.com"
           git checkout -B sync upstream/main
           git checkout origin/patches -- \
             lib/services/sync/webdav.dart \
