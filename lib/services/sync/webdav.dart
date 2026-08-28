@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:dio/io.dart' show IOHttpClientAdapter;
 import 'package:webdav_client/webdav_client.dart' as webdav;
 import 'package:path_provider/path_provider.dart';
 import 'package:kazumi/modules/history/history_sync.dart';
@@ -47,11 +49,21 @@ class WebDav {
     if (webDavURL.isEmpty) {
       throw Exception('请先填写WebDAV URL');
     }
+    // ===== 自定义CA补丁: 信任内置的 liangchen-CA 证书 =====
+    final caData = await rootBundle.load('assets/cert/liangchen-CA.crt');
+    final caBytes = caData.buffer.asUint8List(caData.offsetInBytes, caData.lengthInBytes);
     client = webdav.newClient(
       webDavURL,
       user: webDavUsername,
       password: webDavPassword,
       debug: false,
+    );
+    client.c.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () {
+        final context = SecurityContext()
+          ..setTrustedCertificatesBytes(caBytes);
+        return HttpClient(context: context);
+      },
     );
     client.setHeaders({'accept-charset': 'utf-8'});
     client.c.options.contentType = 'application/octet-stream';
